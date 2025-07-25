@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>اردو چیٹ بوٹ</title>
+  <style>
+    body { font-family: 'Noto Nastaliq Urdu', sans-serif; direction: rtl; text-align: center; padding: 30px; }
+    #micBtn { font-size: 60px; padding: 25px; background: #28a745; color: white; border: none; border-radius: 50%; }
+    #log { margin-top: 30px; font-size: 22px; }
+  </style>
+</head>
+<body>
+  <h1>🎙️ اردو آواز چیٹ بوٹ</h1>
+  <button id="micBtn">🎤</button>
+  <div id="log">مائیک پر کلک کریں اور بات شروع کریں…</div>
+
+  <script>
+    const button = document.getElementById('micBtn');
+    const log = document.getElementById('log');
+    const apiKey = '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';
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'ur-PK';
+    recognition.interimResults = false;
+
+    button.onclick = () => {
+      recognition.start();
+      log.textContent = 'سُن رہا ہوں...';
+    };
+
+    recognition.onresult = async (event) => {
+      const userText = event.results[0][0].transcript;
+      log.textContent = `آپ نے کہا: ${userText}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            { role: 'system', content: 'ہمیشہ اردو زبان میں جواب دیں۔' },
+            { role: 'user', content: userText }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      const botText = data.choices[0].message.content;
+      log.textContent = `جواب: ${botText}`;
+
+      const utter = new SpeechSynthesisUtterance(botText);
+      utter.lang = 'ur-PK';
+      utter.rate = 0.95;
+      speechSynthesis.speak(utter);
+    };
+
+    recognition.onerror = (event) => {
+      log.textContent = 'کچھ غلط ہو گیا، دوبارہ کوشش کریں۔';
+    };
+  </script>
+</body>
+</html>
